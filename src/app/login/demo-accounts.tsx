@@ -1,7 +1,10 @@
 const ACCOUNTS = [
   { role: "Giáo viên", email: "teacher.lan@rth.demo", note: "Lớp 6A1" },
+  { role: "Giáo viên", email: "teacher.minh@rth.demo", note: "Lớp 6A2" },
   { role: "Học sinh", email: "student.an@rth.demo", note: "Lớp 6A1" },
+  { role: "Học sinh", email: "student.dung@rth.demo", note: "Lớp 6A2" },
   { role: "Phụ huynh", email: "parent.hoa@rth.demo", note: "Mẹ của An và Chi" },
+  { role: "Phụ huynh", email: "parent.mai@rth.demo", note: "Mẹ của Dũng" },
 ];
 
 /**

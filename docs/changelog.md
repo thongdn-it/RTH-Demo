@@ -48,7 +48,7 @@ và `../../docs/demo-features.md`.
 
 **Kiểm thử**
 
-- `npm run db:test` — 46 assertion trên PGlite (Postgres WASM), không cần
+- `npm run db:test` — 50 assertion trên PGlite (Postgres WASM), không cần
   Docker, không cần Supabase project, không cần mạng. Kiểm phân quyền, tính
   chạy-lại-được của seed, và FK hint của PostgREST.
 

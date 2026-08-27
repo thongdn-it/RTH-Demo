@@ -256,11 +256,41 @@ check("a student can upload into their own folder", upload.error === null && upl
 const foreignUpload = await as(U.an, `insert into storage.objects (bucket_id, name) values ('submissions', '${U.aToan}/${U.peer}/abc.pdf') returning id`);
 check("a student cannot upload into another pupil's folder", foreignUpload.error !== null || foreignUpload.rows.length === 0, JSON.stringify(foreignUpload));
 
+const nestedUpload = await as(U.an, `insert into storage.objects (bucket_id, name) values ('submissions', '${U.aToan}/${U.an}/nested/abc.pdf') returning id`);
+check("a student cannot upload into nested submission folders", nestedUpload.error !== null || nestedUpload.rows.length === 0, JSON.stringify(nestedUpload));
+
 await reads("the class teacher can read the file", U.lan, `select count(*)::int n from storage.objects where name = '${objectPath}'`, 1);
 await reads("another teacher cannot read the file", U.minh, `select count(*)::int n from storage.objects where name = '${objectPath}'`, 0);
 await reads("the pupil's parent can read the file", U.hoa, `select count(*)::int n from storage.objects where name = '${objectPath}'`, 1);
 await reads("an unrelated parent cannot read the file", U.otherParent, `select count(*)::int n from storage.objects where name = '${objectPath}'`, 0);
 await reads("a malformed path does not raise", U.an, `select count(*)::int n from storage.objects where name = 'not-a-uuid/nope.pdf'`, 0);
+
+const fileResubmit = await as(U.an, `
+  update public.submissions
+  set submission_type = 'file', storage_path = '${objectPath}', external_url = null
+  where assignment_id = '${U.aToan}' and student_id = '${U.an}'
+  returning id
+`);
+check("An can point ungraded work at an uploaded file", fileResubmit.rows?.length === 1, JSON.stringify(fileResubmit));
+
+const deleteUngradedFile = await as(U.an, `delete from storage.objects where name = '${objectPath}' returning id`);
+check("An can delete an ungraded file submission", deleteUngradedFile.error === null && deleteUngradedFile.rows.length === 1, JSON.stringify(deleteUngradedFile));
+
+const gradedSub = await db.query(
+  `select assignment_id from public.submissions where id = '${U.subPeerAnh}'`,
+);
+const gradedObjectPath = `${gradedSub.rows[0].assignment_id}/${U.peer}/graded.pdf`;
+await db.exec(`
+  insert into storage.objects (bucket_id, name) values ('submissions', '${gradedObjectPath}');
+  alter table public.submissions disable trigger submissions_guard_update;
+  update public.submissions
+    set submission_type = 'file', storage_path = '${gradedObjectPath}', external_url = null
+    where id = '${U.subPeerAnh}';
+  alter table public.submissions enable trigger submissions_guard_update;
+`);
+
+const deleteGradedFile = await as(U.peer, `delete from storage.objects where name = '${gradedObjectPath}' returning id`);
+check("a student cannot delete a file after it is graded", deleteGradedFile.error !== null || deleteGradedFile.rows.length === 0, JSON.stringify(deleteGradedFile));
 
 
 // ---------------------------------------------------------------------------

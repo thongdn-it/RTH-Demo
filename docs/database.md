@@ -211,11 +211,15 @@ thứ policy dùng để xác thực, qua `storage.foldername(name)`.
 | Policy | Ai |
 | --- | --- |
 | INSERT | Học sinh, vào đúng thư mục của mình, và phải xem được bài tập đó |
-| UPDATE / DELETE | Học sinh sở hữu thư mục |
+| UPDATE / DELETE | Học sinh sở hữu thư mục, nhưng không được đụng file đang gắn với bài đã chấm |
 | SELECT | Học sinh sở hữu · giáo viên phụ trách bài tập · phụ huynh của học sinh |
 
 `public.safe_uuid(text)` bọc phép ép kiểu: một đoạn đường dẫn do người dùng đặt
 tên không được phép làm policy văng lỗi. Trả `null` thì mọi so khớp đều false.
+
+`public.can_mutate_submission_object(text)` cho phép dọn file nháp/orphan và file
+chưa chấm, nhưng khóa file mà `submissions.storage_path` vẫn đang trỏ tới sau
+khi `graded_at` đã có giá trị.
 
 Ứng dụng không bao giờ phát URL công khai — `signSubmissionFile()` tạo signed URL
 sống 10 phút, và chỉ tạo được cho người mà RLS cho phép đọc object.
