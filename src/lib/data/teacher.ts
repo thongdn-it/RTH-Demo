@@ -127,6 +127,65 @@ export async function getTeacherAssignments(
   }));
 }
 
+export type TeacherGradingHistory = Tables<"grading_history"> & {
+  assignmentTitle: string;
+  className: string;
+  studentName: string;
+};
+
+/** Grading actions performed by this teacher in their own classes. */
+export async function getTeacherGradingHistory(
+  teacherId: string,
+): Promise<TeacherGradingHistory[]> {
+  const supabase = await createClient();
+
+  const { data: history, error: historyError } = await supabase
+    .from("grading_history")
+    .select("*")
+    .eq("teacher_id", teacherId)
+    .order("graded_at", { ascending: false });
+
+  if (historyError) throw historyError;
+  if (!history?.length) return [];
+
+  const assignmentIds = [...new Set(history.map((entry) => entry.assignment_id))];
+  const studentIds = [...new Set(history.map((entry) => entry.student_id))];
+
+  const [{ data: assignments, error: assignmentError }, { data: students, error: studentError }] =
+    await Promise.all([
+      supabase
+        .from("assignments")
+        .select("id, title, classes!inner(id, name, teacher_id)")
+        .in("id", assignmentIds)
+        .eq("classes.teacher_id", teacherId),
+      supabase.from("users").select("id, name").in("id", studentIds),
+    ]);
+
+  if (assignmentError) throw assignmentError;
+  if (studentError) throw studentError;
+
+  const assignmentById = new Map(
+    (assignments ?? []).map((assignment) => [assignment.id, assignment]),
+  );
+  const studentById = new Map((students ?? []).map((student) => [student.id, student]));
+
+  return history.flatMap((entry) => {
+    const assignment = assignmentById.get(entry.assignment_id);
+    const student = studentById.get(entry.student_id);
+
+    if (!assignment || !assignment.classes || !student) return [];
+
+    return [
+      {
+        ...entry,
+        assignmentTitle: assignment.title,
+        className: assignment.classes.name,
+        studentName: student.name,
+      },
+    ];
+  });
+}
+
 export type SubmissionRow = {
   student: ClassMember;
   submission: Tables<"submissions"> | null;

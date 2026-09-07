@@ -47,6 +47,7 @@ for (const file of [
   "20260826000200_rls.sql",
   "20260826000300_triggers.sql",
   "20260826000400_storage.sql",
+  "20260826000500_grading_history.sql",
 ]) {
   if (!(await step(file, read(join(SUPABASE, "migrations", file))))) process.exit(1);
 }
@@ -81,6 +82,7 @@ const counts = await db.query(`
     (select count(*)::int from public.classes) as classes,
     (select count(*)::int from public.assignments) as assignments,
     (select count(*)::int from public.submissions) as submissions,
+    (select count(*)::int from public.grading_history) as grading_history,
     (select count(*)::int from public.notifications) as notifications
 `);
 console.log("  data ", JSON.stringify(counts.rows[0]));
@@ -177,8 +179,11 @@ await reads("Lan sees 6A1 assignments only", U.lan, "select count(*)::int n from
 await reads("Lan sees 6A1 submissions only", U.lan, "select count(*)::int n from public.submissions", 4);
 await reads("Minh cannot read 6A1 submissions", U.minh, "select count(*)::int n from public.submissions", 0);
 await reads("Minh cannot read 6A1 assignments", U.minh, `select count(*)::int n from public.assignments where class_id = '${U.c6a1}'`, 0);
+await reads("Lan sees her own grading history", U.lan, "select count(*)::int n from public.grading_history", 2);
+await reads("Minh cannot read Lan's grading history", U.minh, "select count(*)::int n from public.grading_history", 0);
 await denied("Minh cannot create an assignment in 6A1", U.minh, `insert into public.assignments (class_id, title, due_at) values ('${U.c6a1}','Chen ngang','2026-12-01T00:00:00Z') returning id`);
 await denied("Minh cannot grade a 6A1 submission", U.minh, `update public.submissions set score = 1 where id = '${U.subAnAnh}' returning id`);
+await denied("Lan cannot write grading history directly", U.lan, `insert into public.grading_history (submission_id, assignment_id, student_id, teacher_id, score) values ('${U.subAnAnh}', '${U.aToan}', '${U.an}', '${U.lan}', 10) returning id`);
 
 const original = await db.query(
   `select external_url from public.submissions where id = '${U.subPeerAnh}'`,
@@ -190,6 +195,7 @@ check(
   `wanted ${original.rows[0].external_url}, got ${tamper.rows?.[0]?.external_url}`,
 );
 check("grading stamps graded_by server-side", tamper.rows?.[0]?.graded_by === U.lan, JSON.stringify(tamper.rows?.[0]));
+await reads("Lan history includes the new grade", U.lan, "select count(*)::int n from public.grading_history", 3);
 
 const ungraded = await db.query(
   `select id from public.submissions where assignment_id = '${U.aToan}' and student_id = '${U.chi}'`,

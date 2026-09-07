@@ -203,6 +203,69 @@ export type Database = {
           },
         ];
       };
+      grading_history: {
+        Row: {
+          id: string;
+          submission_id: string;
+          assignment_id: string;
+          student_id: string;
+          teacher_id: string;
+          previous_score: number | null;
+          previous_feedback: string | null;
+          score: number;
+          feedback: string | null;
+          graded_at: string;
+        };
+        Insert: {
+          id?: string;
+          submission_id: string;
+          assignment_id: string;
+          student_id: string;
+          teacher_id: string;
+          previous_score?: number | null;
+          previous_feedback?: string | null;
+          score: number;
+          feedback?: string | null;
+          graded_at?: string;
+        };
+        Update: {
+          previous_score?: number | null;
+          previous_feedback?: string | null;
+          score?: number;
+          feedback?: string | null;
+          graded_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "grading_history_submission_id_fkey";
+            columns: ["submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "grading_history_assignment_id_fkey";
+            columns: ["assignment_id"];
+            isOneToOne: false;
+            referencedRelation: "assignments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "grading_history_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "grading_history_teacher_id_fkey";
+            columns: ["teacher_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       notifications: {
         Row: {
           id: string;

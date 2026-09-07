@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { ClipboardList } from "lucide-react";
+import Link from "next/link";
+import { ClipboardList, History } from "lucide-react";
 
 import { AssignmentProgressCard } from "@/components/teacher/assignment-progress-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth";
 import { requestTime } from "@/lib/now";
 import { getTeacherAssignments } from "@/lib/data/teacher";
@@ -28,6 +30,14 @@ export default async function TeacherAssignmentsPage() {
           pendingGrading > 0
             ? `${assignments.length} bài tập · ${pendingGrading} bài nộp chờ chấm`
             : `${assignments.length} bài tập · đã chấm hết bài nộp`
+        }
+        action={
+          <Button asChild variant="outline" className="h-11">
+            <Link href="/teacher/grading-history">
+              <History aria-hidden />
+              Lịch sử chấm điểm
+            </Link>
+          </Button>
         }
       />
 
